@@ -1,0 +1,43 @@
+{
+  "name": "acfo/session",
+  "description": "Simple session class with strict typing, read only and lazy load support",
+  "keywords": ["session", "read only", "read_and_close", "lazy load", "lazy init", "strict"],
+  "homepage": "https://github.com/acfo/session",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Andrew Forster",
+      "email": "ac@forster.io"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/acfo/session/issues",
+    "source": "https://github.com/acfo/session"
+  },
+  "require": {
+    "php": ">=7.1.0",
+    "psr/http-message": "^1.0"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "2.*",
+    "phpunit/phpunit": "^6.3",
+    "php-mock/php-mock": "^2.0",
+    "php-mock/php-mock-phpunit": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Acfo\\Session\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-0": {
+      "Acfo\\Session\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit --verbose --coverage-text",
+    "sniff": "vendor/bin/phpcs --standard=PSR2 --extensions=php src tests",
+    "fix": "vendor/bin/phpcbf --standard=PSR2 --extensions=php src tests"
+  }
+}
