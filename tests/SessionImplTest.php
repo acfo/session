@@ -5,6 +5,7 @@ namespace Acfo\Session\Tests;
 
 use Acfo\Session\Exceptions\AccessViolationException;
 use Acfo\Session\Exceptions\InvalidMethodCallException;
+use Acfo\Session\Exceptions\UnexpectedActiveSessionException;
 use Acfo\Session\SessionImpl;
 use phpmock\phpunit\PHPMock;
 use PHPUnit\Framework\TestCase;
@@ -36,7 +37,7 @@ class SessionImplTest extends TestCase
         $session_status
             ->expects($this->once())
             ->willReturn(PHP_SESSION_ACTIVE);
-        $this->expectException(InvalidMethodCallException::class);
+        $this->expectException(UnexpectedActiveSessionException::class);
 
         $this->getSut()->start(false);
     }
@@ -55,6 +56,25 @@ class SessionImplTest extends TestCase
             ->willReturn(true);
 
         $this->getSut()->start(false);
+    }
+
+    public function testStartWithInitAlreadyCalledShouldThrowInvalidMethodCallException()
+    {
+        $session_status = $this->getFunctionMock('Acfo\Session', 'session_status');
+        $session_status
+            ->expects($this->once())
+            ->willReturn(PHP_SESSION_NONE);
+        $session_start = $this->getFunctionMock('Acfo\Session', 'session_start');
+        $options = ['read_and_close' => 0];
+        $session_start
+            ->expects($this->once())
+            ->with($options)
+            ->willReturn(true);
+        $this->expectException(InvalidMethodCallException::class);
+
+        $sut = $this->getSut();
+        $sut->start(false);
+        $sut->start(false);
     }
 
 
@@ -279,7 +299,7 @@ class SessionImplTest extends TestCase
         $this->assertArrayNotHasKey('key', $_SESSION);
     }
 
-    public function testClearAllWithReadOnlySessionShouldThrowAccessViolationException()
+    public function testDeleteAllWithReadOnlySessionShouldThrowAccessViolationException()
     {
         $session_status = $this->getFunctionMock('Acfo\Session', 'session_status');
         $session_status
@@ -295,10 +315,10 @@ class SessionImplTest extends TestCase
 
         $sut = $this->getSut();
         $sut->start(true);
-        $sut->clearAll();
+        $sut->deleteAll();
     }
 
-    public function testClearAllWithSessionNotActiveShouldStartSessionAndDeleteValue()
+    public function testDeleteAllWithSessionNotActiveShouldStartSessionAndDeleteValue()
     {
         $session_status = $this->getFunctionMock('Acfo\Session', 'session_status');
         $session_status
@@ -312,8 +332,45 @@ class SessionImplTest extends TestCase
             ->willReturn(true);
         $_SESSION['key'] = 'value';
 
-        $this->getSut()->clearAll();
+        $this->getSut()->deleteAll();
 
         $this->assertArrayNotHasKey('key', $_SESSION);
+    }
+
+    public function testCloseWithReadOnlySessionShouldNotInvokeSessionWriteClose() {
+        $this->isLazyLoadEnabled = true;
+        $session_write_close = $this->getFunctionMock('Acfo\Session', 'session_write_close');
+        $session_write_close
+            ->expects($this->never());
+
+        $sut = $this->getSut();
+        $sut->start(true);
+        $sut->close();
+    }
+
+    public function testCloseWithSessionNotActiveShouldThrowExceptionInvalidMethodCallException() {
+        $this->expectException(InvalidMethodCallException::class);
+
+        $this->getSut()->close();
+    }
+
+    public function testCloseWithSessionActiveShouldInvokeSessionWriteClose() {
+        $session_status = $this->getFunctionMock('Acfo\Session', 'session_status');
+        $session_status
+            ->expects($this->once())
+            ->willReturn(PHP_SESSION_NONE);
+        $session_start = $this->getFunctionMock('Acfo\Session', 'session_start');
+        $options = ['read_and_close' => 0];
+        $session_start
+            ->expects($this->once())
+            ->with($options)
+            ->willReturn(true);
+        $session_write_close = $this->getFunctionMock('Acfo\Session', 'session_write_close');
+        $session_write_close
+            ->expects($this->once());
+
+        $sut = $this->getSut();
+        $sut->start(false);
+        $sut->close();
     }
 }

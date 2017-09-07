@@ -5,6 +5,7 @@ namespace Acfo\Session;
 
 use Acfo\Session\Exceptions\AccessViolationException;
 use Acfo\Session\Exceptions\InvalidMethodCallException;
+use Acfo\Session\Exceptions\UnexpectedActiveSessionException;
 
 class SessionImpl implements Session
 {
@@ -12,6 +13,8 @@ class SessionImpl implements Session
     private $isLazyLoadEnabled;
     /** @var bool */
     private $isReadOnly;
+	/** @var bool */
+	private $isSessionActive;
 
     /**
      * SessionImpl constructor.
@@ -22,17 +25,19 @@ class SessionImpl implements Session
     {
         $this->isLazyLoadEnabled = $isLazyLoadEnabled;
         $this->isReadOnly = false;
+        $this->isSessionActive = false;
     }
 
     /**
      * @param bool $isReadOnly
      *
      * @throws InvalidMethodCallException
+     * @throws UnexpectedActiveSessionException
      */
     public function start(bool $isReadOnly): void
     {
-        if ($this->isSessionActive()) {
-            throw new InvalidMethodCallException('start called although session is already active');
+        if ($this->isSessionActive) {
+            throw new InvalidMethodCallException('start called although session has already been started');
         }
         $this->isReadOnly = $isReadOnly;
         if (!$this->isLazyLoadEnabled) {
@@ -40,29 +45,28 @@ class SessionImpl implements Session
         }
     }
 
-    private function init()
-    {
-        session_start(['read_and_close' => (int)$this->isReadOnly]);
-    }
-
     /**
-     * @return bool
+     * @throws UnexpectedActiveSessionException
      */
-    private function isSessionActive()
+    private function init(): void
     {
-
-        return session_status() == PHP_SESSION_ACTIVE;
+    	if (session_status() == PHP_SESSION_ACTIVE) {
+			throw new UnexpectedActiveSessionException('session has already been started somewhere else');
+		}
+        session_start(['read_and_close' => (int)$this->isReadOnly]);
+        $this->isSessionActive = true;
     }
 
     /**
      * @throws AccessViolationException
+     * @throws UnexpectedActiveSessionException
      */
     public function regenerate(): void
     {
         if ($this->isReadOnly) {
             throw new AccessViolationException('regenerate called on read-only session');
         }
-        if (!$this->isSessionActive()) {
+        if (!$this->isSessionActive) {
             $this->init();
         }
         session_regenerate_id(true);
@@ -70,6 +74,7 @@ class SessionImpl implements Session
 
     /**
      * @throws AccessViolationException
+     * @throws UnexpectedActiveSessionException
      */
     public function destroy(): void
     {
@@ -89,7 +94,7 @@ class SessionImpl implements Session
                 $cookieParams['httponly']
             );
         }
-        if (!$this->isSessionActive()) {
+        if (!$this->isSessionActive) {
             $this->init();
         }
         session_destroy();
@@ -100,10 +105,12 @@ class SessionImpl implements Session
      * @param null $default
      *
      * @return mixed
+     *
+     * @throws UnexpectedActiveSessionException
      */
     public function get(string $key, $default = null)
     {
-        if (!$this->isSessionActive()) {
+        if (!$this->isSessionActive) {
             $this->init();
         }
         if (!isset($_SESSION[$key])) {
@@ -118,13 +125,14 @@ class SessionImpl implements Session
      * @param mixed $value
      *
      * @throws AccessViolationException
+     * @throws UnexpectedActiveSessionException
      */
     public function set(string $key, $value): void
     {
         if ($this->isReadOnly) {
             throw new AccessViolationException('set called on read-only session');
         }
-        if (!$this->isSessionActive()) {
+        if (!$this->isSessionActive) {
             $this->init();
         }
         $_SESSION[$key] = $value;
@@ -134,13 +142,14 @@ class SessionImpl implements Session
      * @param string $key
      *
      * @throws AccessViolationException
+     * @throws UnexpectedActiveSessionException
      */
     public function delete(string $key): void
     {
         if ($this->isReadOnly) {
             throw new AccessViolationException('delete called on read-only session');
         }
-        if (!$this->isSessionActive()) {
+        if (!$this->isSessionActive) {
             $this->init();
         }
         unset($_SESSION[$key]);
@@ -148,15 +157,33 @@ class SessionImpl implements Session
 
     /**
      * @throws AccessViolationException
+     * @throws UnexpectedActiveSessionException
      */
-    public function clearAll(): void
+    public function deleteAll(): void
     {
         if ($this->isReadOnly) {
             throw new AccessViolationException('clearAll called on read-only session');
         }
-        if (!$this->isSessionActive()) {
+        if (!$this->isSessionActive) {
             $this->init();
         }
         $_SESSION = [];
+    }
+
+    /**
+     * @throws InvalidMethodCallException
+     * @throws UnexpectedActiveSessionException
+     */
+    public function close(): void
+    {
+        if ($this->isReadOnly) {
+            $this->isSessionActive = false;
+            return;
+        }
+        if (!$this->isSessionActive) {
+            throw new InvalidMethodCallException('close called although session has not been started');
+        }
+        session_write_close();
+        $this->isSessionActive = false;
     }
 }
