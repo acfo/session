@@ -13,8 +13,8 @@ class SessionImpl implements Session
     private $isLazyLoadEnabled;
     /** @var bool */
     private $isReadOnly;
-	/** @var bool */
-	private $isSessionActive;
+    /** @var bool */
+    private $isSessionActive;
 
     /**
      * SessionImpl constructor.
@@ -50,9 +50,9 @@ class SessionImpl implements Session
      */
     private function init(): void
     {
-    	if (session_status() == PHP_SESSION_ACTIVE) {
-			throw new UnexpectedActiveSessionException('session has already been started somewhere else');
-		}
+        if (session_status() == PHP_SESSION_ACTIVE) {
+            throw new UnexpectedActiveSessionException('session has already been started somewhere else');
+        }
         session_start(['read_and_close' => (int)$this->isReadOnly]);
         $this->isSessionActive = true;
     }

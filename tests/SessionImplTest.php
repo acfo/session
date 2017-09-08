@@ -337,7 +337,8 @@ class SessionImplTest extends TestCase
         $this->assertArrayNotHasKey('key', $_SESSION);
     }
 
-    public function testCloseWithReadOnlySessionShouldNotInvokeSessionWriteClose() {
+    public function testCloseWithReadOnlySessionShouldNotInvokeSessionWriteClose()
+    {
         $this->isLazyLoadEnabled = true;
         $session_write_close = $this->getFunctionMock('Acfo\Session', 'session_write_close');
         $session_write_close
@@ -348,13 +349,15 @@ class SessionImplTest extends TestCase
         $sut->close();
     }
 
-    public function testCloseWithSessionNotActiveShouldThrowExceptionInvalidMethodCallException() {
+    public function testCloseWithSessionNotActiveShouldThrowExceptionInvalidMethodCallException()
+    {
         $this->expectException(InvalidMethodCallException::class);
 
         $this->getSut()->close();
     }
 
-    public function testCloseWithSessionActiveShouldInvokeSessionWriteClose() {
+    public function testCloseWithSessionActiveShouldInvokeSessionWriteClose()
+    {
         $session_status = $this->getFunctionMock('Acfo\Session', 'session_status');
         $session_status
             ->expects($this->once())
