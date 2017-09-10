@@ -8,6 +8,7 @@ use Acfo\Session\Middleware\ReadOnlySessionStrategy;
 use Acfo\Session\Session;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Acfo\Session\Exceptions\UnexpectedActiveSessionException;
 
 class SessionMiddleware
 {
@@ -49,8 +50,9 @@ class SessionMiddleware
      * @param callable $next
      *
      * @return ResponseInterface
+	 * @throws UnexpectedActiveSessionException
      */
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
+    public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next): ResponseInterface
     {
         $isReadOnly = false;
         foreach ($this->readOnlySessionStrategies as $readOnlySessionStrategy) {
