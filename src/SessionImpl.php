@@ -87,7 +87,7 @@ class SessionImpl implements Session
             setcookie(
                 session_name(),
                 '',
-                time() - 42000,
+                time() + 42000,
                 $cookieParams['path'],
                 $cookieParams['domain'],
                 $cookieParams['secure'],
