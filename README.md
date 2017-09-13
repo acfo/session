@@ -11,22 +11,24 @@ composer require acfo/session
 
 ###Usage
 
-Add the session class to your dependency injection container (e.g. Pimple):
+Add the session class an middleware to your dependency injection container (e.g. Pimple):
 
 ```php
 $container[\Acfo\Session\Session::class] = function () {
-	return new \Acfo\Session\SessionImpl();
+    return new \Acfo\Session\SessionImpl();
+};
+
+$container[\Acfo\Session\Middleware\Slim3\SessionMiddleware] = function ($container) {
+    return new \Acfo\Session\Middleware\Slim3\SessionMiddleware(
+        $container->get(\Acfo\Session\Session::class)
+    );
 };
 ```
 
 Add middleware (e.g. Slim 3.x): 
 
 ```php
-$app->add(
-	new \Acfo\Session\Middleware\Slim3\SessionMiddleware(
-		$container->get(\Acfo\Session\Session::class)
-	)
-);
+$app->add(\Acfo\Session\Middleware\Slim3\SessionMiddleware::class);
 ```
 
 This setup will allow read and write operations and not start the session before it is actually used, e.g.:
@@ -68,16 +70,18 @@ class GetRequestReadOnlySessionStrategy implements ReadOnlySessionStrategy
     }
 }
 
-$readOnlySessionStrategies = [
-    new GetRequestReadOnlySessionStrategy()
-];
+$container[\Acfo\Session\Middleware\Slim3\SessionMiddleware] = function ($container) {
+    $readOnlySessionStrategies = [
+        new GetRequestReadOnlySessionStrategy()
+    ];
 
-$app->add(
-	new \Acfo\Session\Middleware\Slim3\SessionMiddleware(
-		$container->get(\Acfo\Session\Session::class),
-		$readOnlySessionStrategies
-	)
-);
+    return new \Acfo\Session\Middleware\Slim3\SessionMiddleware(
+        $container->get(\Acfo\Session\Session::class),
+        $readOnlySessionStrategies
+    );
+};
+
+$app->add(\Acfo\Session\Middleware\Slim3\SessionMiddleware::class);
 ```
 
 The default settings for sessions are suitable for most applications. 
@@ -88,13 +92,18 @@ the SessionMiddleware.
 ```php
 $settings = \Acfo\Session\Middleware\Slim3\SessionMiddleware::RECOMMENDED_SETTINGS;
 
-$app->add(
-	new \Acfo\Session\Middleware\Slim3\SessionMiddleware(
-		$container->get(\Acfo\Session\Session::class),
-		null,
-		$settings
-	)
-);
+$container[\Acfo\Session\Middleware\Slim3\SessionMiddleware] = function ($container) {
+    $settings = \Acfo\Session\Middleware\Slim3\SessionMiddleware::RECOMMENDED_SETTINGS;
+
+    return new \Acfo\Session\Middleware\Slim3\SessionMiddleware(
+        $container->get(\Acfo\Session\Session::class),
+        null,
+        $settings
+    );
+};
+
+
+$app->add(\Acfo\Session\Middleware\Slim3\SessionMiddleware::class);
 ```
 
 Enjoy!
