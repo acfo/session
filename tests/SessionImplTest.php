@@ -170,7 +170,7 @@ class SessionImplTest extends TestCase
         $setcookie = $this->getFunctionMock('Acfo\Session', 'setcookie');
         $setcookie
             ->expects($this->once())
-            ->with('session_name', '', -42000, 'path', 'domain', false, true)
+            ->with('session_name', '', -3600, 'path', 'domain', false, true)
             ->willReturn(0);
         $session_start = $this->getFunctionMock('Acfo\Session', 'session_start');
         $options = ['read_and_close' => 0];

@@ -64,7 +64,6 @@ interface Session
 
     /**
      * @throws InvalidMethodCallException
-     * @throws UnexpectedActiveSessionException
      */
     public function close(): void;
 }
